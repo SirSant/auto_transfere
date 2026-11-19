@@ -5,6 +5,12 @@ import pyautogui
 import time
 import threading
 import keyboard
+import json
+import os
+import sys
+import tempfile
+import subprocess
+import urllib.request
 
 
 # ==============================
@@ -30,6 +36,12 @@ arquivo_excel = None
 
 pyautogui.PAUSE = 0.2
 pyautogui.FAILSAFE = True
+
+VERSAO_ATUAL = "1.0.0"
+GITHUB_REPOSITORIO = "SirSant/auto_transfere"
+NOME_INSTALADOR = "AutoTransfere_Setup.exe"
+URL_RELEASES_API = f"https://api.github.com/repos/{GITHUB_REPOSITORIO}/releases/latest"
+
 
 
 # ==============================
@@ -380,6 +392,49 @@ def parar_automacao():
     registrar_log("SOLICITAÇÃO DE ENCERRAMENTO enviada.")
 
 
+
+def versao_numerica(valor):
+    try:
+        return tuple(int(p) for p in valor.lstrip("vV").split("."))
+    except (ValueError, AttributeError):
+        return (0,)
+
+def verificar_atualizacao():
+    try:
+        req = urllib.request.Request(URL_RELEASES_API, headers={
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "AutoTransfere-Updater"
+        })
+        with urllib.request.urlopen(req, timeout=8) as resposta:
+            release = json.loads(resposta.read().decode("utf-8"))
+        remota = release.get("tag_name", "").lstrip("vV")
+        if not remota or versao_numerica(remota) <= versao_numerica(VERSAO_ATUAL):
+            return
+        asset = next((a for a in release.get("assets", []) if a.get("name") == NOME_INSTALADOR), None)
+        if not asset:
+            registrar_log("Nova versão encontrada, mas o instalador não está anexado à release.")
+            return
+
+        def oferecer():
+            if not messagebox.askyesno("Atualização disponível",
+                f"Versão instalada: {VERSAO_ATUAL}\nNova versão: {remota}\n\nDeseja atualizar agora?"):
+                return
+            try:
+                destino = os.path.join(tempfile.gettempdir(), NOME_INSTALADOR)
+                req = urllib.request.Request(asset["browser_download_url"],
+                    headers={"User-Agent": "AutoTransfere-Updater"})
+                with urllib.request.urlopen(req, timeout=120) as origem, open(destino, "wb") as arquivo:
+                    arquivo.write(origem.read())
+                messagebox.showinfo("Atualização", "O instalador será aberto. O programa será fechado.")
+                subprocess.Popen([destino, "/CLOSEAPPLICATIONS"])
+                ao_fechar()
+            except Exception as erro:
+                messagebox.showerror("Falha na atualização", str(erro))
+        janela.after(0, oferecer)
+    except Exception as erro:
+        registrar_log(f"Verificação de atualização indisponível: {erro}")
+
+
 # ==============================
 # INTERFACE GRÁFICA
 # ==============================
@@ -495,4 +550,5 @@ def ao_fechar():
     janela.destroy()
 
 janela.protocol("WM_DELETE_WINDOW", ao_fechar)
+janela.after(1200, lambda: threading.Thread(target=verificar_atualizacao, daemon=True).start())
 janela.mainloop()
