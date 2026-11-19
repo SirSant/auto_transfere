@@ -1,0 +1,5 @@
+openpyxl
+pyautogui
+keyboard
+pytesseract
+Pillow
