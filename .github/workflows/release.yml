@@ -30,8 +30,8 @@ jobs:
         shell: pwsh
         run: |
           choco install tesseract --yes --no-progress
-          $tesseract = (Get-Command tesseract.exe -ErrorAction Stop).Source
-          $sourceDir = Split-Path $tesseract
+          $sourceDir = Join-Path $env:ProgramFiles 'Tesseract-OCR'
+          if (!(Test-Path (Join-Path $sourceDir 'tesseract.exe'))) { throw "Tesseract installation not found at $sourceDir" }
           New-Item -ItemType Directory -Force runtime/tesseract | Out-Null
           Copy-Item -Path (Join-Path $sourceDir '*') -Destination runtime/tesseract -Recurse -Force
           $tessdataDir = Join-Path (Get-Location) 'runtime/tesseract/tessdata'
