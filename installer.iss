@@ -8,7 +8,7 @@ AppId={{A45B8182-217A-4AA8-9E13-4DB7D4F46E5D}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={autopf}\\AutoTransfere
+DefaultDirName={localappdata}\\Programs\\AutoTransfere
 DefaultGroupName=AutoTransfere
 UninstallDisplayIcon={app}\\{#MyAppExeName}
 OutputDir=Output
@@ -17,7 +17,7 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 ArchitecturesInstallIn64BitMode=x64
-PrivilegesRequired=admin
+PrivilegesRequired=lowest
 CloseApplications=yes
 RestartApplications=no
 
